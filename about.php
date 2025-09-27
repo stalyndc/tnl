@@ -151,7 +151,7 @@ $pageTitle = "About | The News Log";
     </footer>
 
     <!-- JavaScript -->
-    <script src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 
 </html>

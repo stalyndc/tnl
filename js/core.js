@@ -97,8 +97,5 @@ function checkInitialLoadingState() {
   }
 }
 
-// Initialize the application when DOM is ready
-document.addEventListener("DOMContentLoaded", initApp);
-
 // Export functions that might be needed by other modules
 export { initApp };

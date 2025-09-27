@@ -1,0 +1,562 @@
+/**
+ * The News Log - Main JavaScript
+ * Enhanced with animations, loading improvements, reading progress indicator,
+ * load more functionality, border highlight for content updates,
+ * improved auto-refresh schedule, and scroll-aware refresh pausing
+ */
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Initialize reading progress indicator
+  initReadingProgress();
+  
+  // Initialize load more button
+  initLoadMoreButton();
+  
+  // Initialize manual refresh button
+  initManualRefresh();
+  
+  // Initialize scroll-aware auto-refresh
+  initScrollAwareRefresh();
+  
+  // Show loading spinner and skeleton screens when navigating to new pages
+  const links = document.querySelectorAll('a[href]:not([target="_blank"])');
+
+  links.forEach((link) => {
+    link.addEventListener("click", function (e) {
+      // Don't show loading for external links
+      if (this.getAttribute("target") === "_blank") return;
+
+      // Hide current content
+      const articlesContainer = document.getElementById("articles-container");
+      if (articlesContainer) {
+        articlesContainer.style.opacity = "0";
+        articlesContainer.style.transition = "opacity 0.3s ease";
+      }
+
+      // Show loading spinner or skeletons
+      showLoading();
+    });
+  });
+
+  // Function to show loading state with skeleton screens
+  function showLoading() {
+    const loading = document.getElementById("loading");
+    if (!loading) return;
+
+    // Check if we're on the about page
+    const isAboutPage = window.location.pathname.includes('about');
+    
+    // Set appropriate loading text
+    const loadingText = isAboutPage ? "Loading page" : "Fetching headlines";
+
+    // Replace spinner with improved loading animation
+    loading.innerHTML = `
+      <div class="loading-dots"></div>
+      <p class="loading-text">${loadingText}</p>
+    `;
+    loading.style.display = "block";
+
+    // Add skeleton screens after the loading indicator
+    const articlesContainer = document.getElementById("articles-container");
+    if (articlesContainer && !isAboutPage) {
+      // Only add skeletons on the homepage, not about page
+      // Create 5 skeleton article cards
+      let skeletonHTML = '';
+      for (let i = 0; i < 5; i++) {
+        skeletonHTML += `
+          <div class="skeleton-card">
+            <div class="skeleton-title"></div>
+            <div class="skeleton-meta">
+              <div class="skeleton-source"></div>
+              <div class="skeleton-time"></div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Only show skeletons if we don't have articles
+      if (!articlesContainer.querySelector('.article-card')) {
+        articlesContainer.innerHTML = skeletonHTML;
+      }
+    }
+  }
+
+  // Update relative timestamps every minute
+  updateRelativeTimes();
+  setInterval(updateRelativeTimes, 60000);
+
+  // Add subtle border highlight when last updated changes
+  const lastUpdatedElement = document.getElementById("last-updated");
+  if (lastUpdatedElement) {
+    // Store initial value
+    let lastValue = lastUpdatedElement.textContent;
+    
+    // Check for changes every 5 seconds
+    setInterval(function() {
+      if (lastUpdatedElement.textContent !== lastValue) {
+        // Value changed, add highlight class instead of pulse
+        lastUpdatedElement.classList.add("highlight");
+        
+        // Remove highlight class after animation completes
+        setTimeout(function() {
+          lastUpdatedElement.classList.remove("highlight");
+        }, 800); // Match animation duration in CSS
+        
+        // Update stored value
+        lastValue = lastUpdatedElement.textContent;
+      }
+    }, 5000);
+  }
+
+  // Check if we need to show the loading state initially
+  // Don't show loading on the about page
+  const isAboutPage = window.location.pathname.includes('about');
+  if (!isAboutPage && 
+      document.querySelector('.articles-list') === null && 
+      document.querySelector('.error-message') === null && 
+      document.querySelector('.empty-message') === null) {
+    showLoading();
+  } else if (isAboutPage) {
+    // Immediately hide loading on about page
+    const loading = document.getElementById("loading");
+    if (loading) {
+      loading.style.display = "none";
+    }
+    
+    // Make sure about content is visible
+    const aboutSection = document.querySelector('.about-section');
+    if (aboutSection) {
+      aboutSection.style.opacity = "1";
+    }
+  }
+});
+
+/**
+ * Initialize auto-refresh functionality with scroll-awareness
+ * - Pauses refresh when user is reading (scrolled down)
+ * - Initial check after 2 minutes
+ * - Recurring checks every 5 minutes
+ */
+function initAutoRefresh() {
+  // Only set up auto-refresh on the homepage
+  if (window.location.pathname.includes('about')) {
+    return;
+  }
+  
+  // Variables to track refresh state
+  let isRefreshing = false;
+  let refreshInterval = null;
+  
+  // Initial check after 2 minutes (120000ms)
+  const initialDelay = 120000;
+  
+  // Set up initial delayed check
+  const initialTimer = setTimeout(function() {
+    if (!isRefreshing && !window.isScrolledDown) {
+      checkForFreshContent();
+      
+      // Set up recurring checks every 5 minutes (300000ms)
+      if (!refreshInterval) {
+        refreshInterval = setInterval(function() {
+          if (!isRefreshing && !window.isScrolledDown) {
+            checkForFreshContent();
+          }
+        }, 300000);
+      }
+    }
+  }, initialDelay);
+  
+  // Clean up timers when page is unloaded
+  window.addEventListener('beforeunload', function() {
+    clearTimeout(initialTimer);
+    clearInterval(refreshInterval);
+  });
+}
+
+/**
+ * Initialize scroll-aware refresh functionality
+ * Pauses auto-refresh when user is reading content
+ */
+function initScrollAwareRefresh() {
+  // Initialize the scroll state
+  window.isScrolledDown = false;
+  
+  // Track when the user is reading content (scrolled down)
+  window.addEventListener('scroll', function() {
+    // Consider user as "reading" when scrolled more than 200px
+    const scrollThreshold = 200;
+    window.isScrolledDown = window.scrollY > scrollThreshold;
+    
+    // Update the status indicator if it exists
+    const refreshStatus = document.getElementById('refresh-status');
+    if (refreshStatus) {
+      if (window.isScrolledDown) {
+        refreshStatus.textContent = 'Auto-refresh paused while reading';
+        refreshStatus.classList.add('paused');
+      } else {
+        refreshStatus.textContent = 'Auto-refresh active';
+        refreshStatus.classList.remove('paused');
+      }
+    }
+  });
+}
+
+/**
+ * Initialize manual refresh button
+ */
+function initManualRefresh() {
+  const refreshButton = document.getElementById('manual-refresh');
+  
+  if (!refreshButton) return;
+  
+  refreshButton.addEventListener('click', function() {
+    // Show loading state
+    refreshButton.classList.add('loading');
+    
+    // Perform content refresh
+    checkForFreshContent(function() {
+      // Reset button state when complete
+      refreshButton.classList.remove('loading');
+    });
+  });
+}
+
+/**
+ * Initialize reading progress indicator
+ */
+function initReadingProgress() {
+  const progressBar = document.getElementById('reading-progress-bar');
+  const content = document.querySelector('main');
+  
+  if (!progressBar || !content) return;
+  
+  // Calculate and update progress on scroll
+  window.addEventListener('scroll', function() {
+    // Calculate how far down the page the user has scrolled
+    const scrollTop = window.scrollY;
+    const contentHeight = content.offsetHeight;
+    const windowHeight = window.innerHeight;
+    const footerHeight = document.querySelector('footer').offsetHeight;
+    
+    // Calculate scroll percentage, accounting for the footer
+    const scrollPercent = (scrollTop / (contentHeight - windowHeight + footerHeight)) * 100;
+    
+    // Update the progress bar width
+    progressBar.style.width = `${Math.min(scrollPercent, 100)}%`;
+    
+    // Make progress bar visible once scrolling starts
+    if (scrollTop > 50) {
+      document.getElementById('reading-progress-container').classList.add('visible');
+    } else {
+      document.getElementById('reading-progress-container').classList.remove('visible');
+    }
+  });
+}
+
+/**
+ * Initialize load more button functionality
+ */
+function initLoadMoreButton() {
+  const loadMoreButton = document.getElementById('load-more-button');
+  
+  if (!loadMoreButton) return;
+  
+  loadMoreButton.addEventListener('click', function() {
+    // Get current offset and limit from button data attributes
+    const offset = parseInt(loadMoreButton.getAttribute('data-offset'));
+    const limit = parseInt(loadMoreButton.getAttribute('data-limit'));
+    const total = parseInt(loadMoreButton.getAttribute('data-total'));
+    
+    // Show loading state
+    loadMoreButton.classList.add('loading');
+    loadMoreButton.textContent = 'Loading...';
+    
+    // Fetch more articles using AJAX
+    fetch(`api/get-more-articles.php?offset=${offset}&limit=${limit}`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.items && data.items.length > 0) {
+        // Get the articles list container
+        const articlesList = document.querySelector('.articles-list');
+        
+        // Append new articles
+        data.items.forEach(item => {
+          const articleElement = createArticleElement(item);
+          articlesList.appendChild(articleElement);
+          
+          // Add highlight class to show it's new content
+          articleElement.classList.add('highlight');
+          
+          // Remove highlight class after animation completes
+          setTimeout(function() {
+            articleElement.classList.remove('highlight');
+          }, 800); // Match animation duration in CSS
+        });
+        
+        // Update button attributes for next load
+        const newOffset = offset + data.items.length;
+        loadMoreButton.setAttribute('data-offset', newOffset);
+        
+        // Hide button if we've loaded all articles
+        if (newOffset >= total || !data.hasMore) {
+          loadMoreButton.parentElement.style.display = 'none';
+        }
+        
+        // Update relative times for new elements
+        updateRelativeTimes();
+        
+        // Reset button state
+        loadMoreButton.classList.remove('loading');
+        loadMoreButton.textContent = 'Load More Articles';
+      } else {
+        // No more articles or error
+        loadMoreButton.parentElement.style.display = 'none';
+      }
+    })
+    .catch(error => {
+      console.error('Error loading more articles:', error);
+      loadMoreButton.classList.remove('loading');
+      loadMoreButton.textContent = 'Error Loading Articles - Try Again';
+    });
+  });
+}
+
+/**
+ * Create article element from item data
+ * 
+ * @param {object} item - Article data
+ * @return {Element} Article list item element
+ */
+function createArticleElement(item) {
+  const li = document.createElement('li');
+  li.className = 'article-card';
+  li.setAttribute('itemscope', '');
+  li.setAttribute('itemtype', 'https://schema.org/NewsArticle');
+  
+  const meta = document.createElement('meta');
+  meta.setAttribute('itemprop', 'datePublished');
+  meta.setAttribute('content', new Date(item.timestamp * 1000).toISOString());
+  li.appendChild(meta);
+  
+  const link = document.createElement('a');
+  link.href = item.link;
+  link.setAttribute('target', '_blank');
+  link.setAttribute('rel', 'noopener');
+  link.setAttribute('itemprop', 'url');
+  
+  const content = document.createElement('div');
+  content.className = 'article-content';
+  
+  const title = document.createElement('h2');
+  title.className = 'article-title';
+  title.setAttribute('itemprop', 'headline');
+  title.textContent = item.title;
+  
+  const metaDiv = document.createElement('div');
+  metaDiv.className = 'article-meta';
+  
+  const source = document.createElement('span');
+  source.className = 'article-source';
+  source.setAttribute('itemprop', 'publisher');
+  source.setAttribute('itemscope', '');
+  source.setAttribute('itemtype', 'https://schema.org/Organization');
+  
+  const sourceNameMeta = document.createElement('meta');
+  sourceNameMeta.setAttribute('itemprop', 'name');
+  sourceNameMeta.setAttribute('content', item.source);
+  source.appendChild(sourceNameMeta);
+  source.appendChild(document.createTextNode(item.source));
+  
+  const time = document.createElement('span');
+  time.className = 'article-time';
+  time.setAttribute('data-timestamp', item.timestamp);
+  time.textContent = formatRelativeTime(Math.floor(Date.now() / 1000) - item.timestamp);
+  
+  metaDiv.appendChild(source);
+  metaDiv.appendChild(time);
+  
+  content.appendChild(title);
+  content.appendChild(metaDiv);
+  
+  link.appendChild(content);
+  li.appendChild(link);
+  
+  // Add fade-in animation
+  li.style.opacity = '0';
+  li.style.animation = 'fadeIn var(--transition-medium) forwards';
+  
+  return li;
+}
+
+/**
+ * Updates all relative time elements on the page
+ */
+function updateRelativeTimes() {
+  const timeElements = document.querySelectorAll(
+    ".article-time, #last-updated"
+  );
+
+  timeElements.forEach((el) => {
+    const timestamp = parseInt(el.getAttribute("data-timestamp"));
+    if (!timestamp) return;
+
+    el.textContent = formatRelativeTime(Math.floor(Date.now() / 1000) - timestamp);
+  });
+}
+
+/**
+ * Format timestamp to relative time
+ *
+ * @param {number} diff - Time difference in seconds
+ * @return {string} Formatted relative time
+ */
+function formatRelativeTime(diff) {
+  if (diff < 60) {
+    return "Just now";
+  } else if (diff < 3600) {
+    const minutes = Math.floor(diff / 60);
+    return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+  } else if (diff < 86400) {
+    const hours = Math.floor(diff / 3600);
+    return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  } else if (diff < 172800) {
+    return "Yesterday";
+  } else {
+    const days = Math.floor(diff / 86400);
+    return `${days} days ago`;
+  }
+}
+
+/**
+ * Check for fresh content and update the page
+ * Will not refresh content if user is scrolled down reading
+ * 
+ * @param {Function} callback - Optional callback function after refresh completes
+ */
+function checkForFreshContent(callback) {
+  // Only check for fresh content on the homepage
+  if (window.location.pathname.includes('about')) {
+    if (callback) callback();
+    return;
+  }
+  
+  // Don't refresh if user is reading (scrolled down)
+  if (window.isScrolledDown && !callback) {
+    // If this is an automatic refresh, skip it when user is reading
+    // But still allow manual refreshes (callback is provided)
+    return;
+  }
+  
+  // Add loading animation to manual refresh button if it exists
+  const refreshButton = document.getElementById('manual-refresh');
+  if (refreshButton) {
+    refreshButton.classList.add('loading');
+  }
+  
+  // Set refreshing state
+  window.isRefreshing = true;
+  
+  // Create a timestamp for cache-busting
+  const timestamp = new Date().getTime();
+  
+  // Use fetch API to get the latest data
+  fetch('index.php?refresh=' + timestamp, {
+      headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+      }
+  })
+  .then(response => response.text())
+  .then(html => {
+      // Extract just the articles container from the response
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const freshArticles = doc.getElementById('articles-container');
+      
+      if (freshArticles) {
+          // Get current container
+          const currentContainer = document.getElementById('articles-container');
+          
+          // Compare content - only update if different
+          if (currentContainer.innerHTML !== freshArticles.innerHTML) {
+              // Store current top articles for comparison
+              const currentArticleIds = Array.from(currentContainer.querySelectorAll('.article-card a'))
+                .map(a => a.href);
+              
+              // Save current scroll position
+              const scrollPosition = window.scrollY;
+              
+              // Update content
+              currentContainer.innerHTML = freshArticles.innerHTML;
+              
+              // Highlight new articles
+              const newArticles = Array.from(currentContainer.querySelectorAll('.article-card a'));
+              newArticles.forEach((articleLink, index) => {
+                  if (!currentArticleIds.includes(articleLink.href)) {
+                      // This is a new article, add highlight
+                      const articleCard = articleLink.closest('.article-card');
+                      if (articleCard) {
+                          articleCard.classList.add('highlight');
+                          
+                          // Remove highlight after animation completes
+                          setTimeout(function() {
+                              articleCard.classList.remove('highlight');
+                          }, 800); // Match animation duration in CSS
+                      }
+                  }
+              });
+              
+              // Update the last updated time with highlight instead of pulse
+              const lastUpdated = doc.getElementById('last-updated');
+              if (lastUpdated) {
+                  document.getElementById('last-updated').textContent = lastUpdated.textContent;
+                  document.getElementById('last-updated').setAttribute('data-timestamp', 
+                      lastUpdated.getAttribute('data-timestamp'));
+                  
+                  // Trigger border highlight animation
+                  document.getElementById('last-updated').classList.add("highlight");
+                  setTimeout(function() {
+                      document.getElementById('last-updated').classList.remove("highlight");
+                  }, 800);
+              }
+              
+              // Restore scroll position if user was reading
+              if (window.isScrolledDown) {
+                  window.scrollTo(0, scrollPosition);
+              }
+              
+              // Re-initialize any JS that needs to run on the new content
+              updateRelativeTimes();
+              initLoadMoreButton();
+          }
+      }
+      
+      // Reset refreshing state
+      window.isRefreshing = false;
+      
+      // Reset refresh button state
+      if (refreshButton) {
+        refreshButton.classList.remove('loading');
+      }
+      
+      // Call callback function if provided
+      if (callback) callback();
+  })
+  .catch(error => {
+      console.log('Error checking for updates:', error);
+      
+      // Reset refreshing state
+      window.isRefreshing = false;
+      
+      // Reset refresh button state
+      if (refreshButton) {
+        refreshButton.classList.remove('loading');
+      }
+      
+      // Call callback function if provided
+      if (callback) callback();
+  });
+}

@@ -1,0 +1,21 @@
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Turn on the rewrite engine
+RewriteEngine On
+
+# Redirect /index to / (root)
+RewriteCond %{THE_REQUEST} \s/+index[/\s?] [NC]
+RewriteRule ^index/?$ / [R=301,L]
+
+# Redirect any direct requests for .php files to clean URL versions
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
+RewriteRule ^ /%1 [R=301,NE,L]
+
+# If the request is not for a file that exists
+RewriteCond %{REQUEST_FILENAME} !-f
+# If the request is not for a directory that exists
+RewriteCond %{REQUEST_FILENAME} !-d
+# Add .php extension internally
+RewriteRule ^([^\.]+)$ $1.php [NC,L]

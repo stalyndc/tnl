@@ -40,11 +40,15 @@ The News Log is a PHP-based tech news aggregator. The application now routes all
   ```bash
   rm storage/cache/*.json
   ```
+- **Run automated tests (requires Composer dev dependencies)**
+  ```bash
+  vendor/bin/phpunit
+  ```
 
 ## Development Workflow
 1. Add or modify services/classes inside `src/` (see the simple container registrations in `functions.php`) and regenerate the autoloader if new files are created.
 2. Update configuration defaults in `config/app.php` or `config/feeds.php` as needed.
-3. Run linting (or the upcoming PHPUnit suite once added) before committing.
+3. Run linting and the PHPUnit suite (`vendor/bin/phpunit`) before committing.
 4. Document operational changes in `docs/`.
 
 ## Deployment Notes (Hostinger Shared Hosting)

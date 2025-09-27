@@ -3,7 +3,7 @@
 ## Testing
 - Regenerate caches by running the application once and verifying `storage/cache` is writable.
 - Exercise the API endpoint `api/get-more-articles.php` to confirm pagination still respects the new storage paths.
-- Add automated tests once the service-layer refactor is in place (e.g., PHPUnit suite for FeedAggregator).
+- Run `composer install` (to pull dev dependencies) and execute `vendor/bin/phpunit` locally before deploying.
 
 ## Environment Variables
 - Set `APP_DEBUG=false` in production to suppress error output.

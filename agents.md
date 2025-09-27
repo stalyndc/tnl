@@ -48,6 +48,10 @@ The News Log is a PHP-based tech news aggregator. The application now routes all
   ```bash
   scripts/build-release.sh
   ```
+- **Clear cache/logs before packaging (optional)**
+  ```bash
+  scripts/clear-cache.php
+  ```
 
 ## Development Workflow
 1. Add or modify services/classes inside `src/` (see the simple container registrations in `functions.php`) and regenerate the autoloader if new files are created.

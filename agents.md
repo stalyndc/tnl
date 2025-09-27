@@ -42,7 +42,7 @@ The News Log is a PHP-based tech news aggregator. The application now routes all
   ```
 
 ## Development Workflow
-1. Add or modify services/classes inside `src/` and regenerate the autoloader if new files are created.
+1. Add or modify services/classes inside `src/` (see the simple container registrations in `functions.php`) and regenerate the autoloader if new files are created.
 2. Update configuration defaults in `config/app.php` or `config/feeds.php` as needed.
 3. Run linting (or the upcoming PHPUnit suite once added) before committing.
 4. Document operational changes in `docs/`.

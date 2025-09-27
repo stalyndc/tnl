@@ -21,8 +21,8 @@ class FeedAggregator
         FeedRepository $feedRepository,
         CacheRepository $cacheRepository,
         FeedClient $feedClient,
-        int $cacheTtl = 1800,
-        int $cacheCleanupMaxAge = 604800
+        int $cacheTtl,
+        int $cacheCleanupMaxAge
     ) {
         $this->feedRepository = $feedRepository;
         $this->cacheRepository = $cacheRepository;

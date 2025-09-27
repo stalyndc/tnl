@@ -8,6 +8,7 @@ require_once __DIR__ . '/includes/simple-logger.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
 use App\Cache\CacheRepository;
+use App\Config\AppConfig;
 use App\Config\FeedRepository;
 use App\Http\FeedClient;
 use App\Services\FeedAggregator;
@@ -41,7 +42,16 @@ function getFeedClient(): FeedClient
     static $client = null;
 
     if ($client === null) {
-        $client = new FeedClient();
+        try {
+            $timeout = AppConfig::httpTimeout();
+        } catch (Exception $e) {
+            Logger::warning('Failed to read HTTP timeout from config, using default', [
+                'error' => $e->getMessage()
+            ]);
+            $timeout = 10;
+        }
+
+        $client = new FeedClient($timeout);
     }
 
     return $client;
@@ -52,10 +62,23 @@ function getFeedAggregator(): FeedAggregator
     static $aggregator = null;
 
     if ($aggregator === null) {
+        try {
+            $cacheTtl = AppConfig::cacheTtl();
+            $cleanup = AppConfig::cacheCleanupMaxAge();
+        } catch (Exception $e) {
+            Logger::warning('Failed to read cache config, using defaults', [
+                'error' => $e->getMessage()
+            ]);
+            $cacheTtl = 1800;
+            $cleanup = 604800;
+        }
+
         $aggregator = new FeedAggregator(
             getFeedRepository(),
             getCacheRepository(),
-            getFeedClient()
+            getFeedClient(),
+            $cacheTtl,
+            $cleanup
         );
     }
 

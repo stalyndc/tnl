@@ -6,7 +6,7 @@ class FeedClient
 {
     private int $timeout;
 
-    public function __construct(int $timeout = 10)
+    public function __construct(int $timeout)
     {
         $this->timeout = $timeout;
     }

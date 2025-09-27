@@ -42,7 +42,7 @@ function getFeedSources()
             'name' => 'CNBC',
             'url' => 'https://simplefeedmaker.com/feed/32e9df30cc29.xml'
         ],
-         'mit ai news' => [
+        'mit-ai-news' => [
             'name' => 'MIT AI NEWS',
             'url' => 'https://news.mit.edu/topic/mitartificial-intelligence2-rss.xml'
         ],
@@ -50,15 +50,15 @@ function getFeedSources()
             'name' => 'Deepmind',
             'url' => 'https://simplefeedmaker.com/feed/0f5dd3440a0d.xml'
         ],
-         'znet' => [
+        'znet' => [
             'name' => 'Znet',
             'url' => 'https://www.zdnet.com/news/rss.xml'
         ],
-        'big think' => [
+        'big-think' => [
             'name' => 'Big Think',
             'url' => 'https://simplefeedmaker.com/feed/6dda1d9c05d3.xml'
         ],
-        'the news stack' => [
+        'the-news-stack' => [
             'name' => 'The News Stack',
             'url' => 'https://thenewstack.io/blog/feed/'
         ]
@@ -78,7 +78,7 @@ function getAllFeeds($limit = 10, $offset = 0, $getTotalCount = false)
     try {
         $sources = getFeedSources();
         $result = [
-            'timestamp' => time(),
+            'timestamp' => null,
             'items' => [],
             'hasMore' => false,
             'offset' => $offset,
@@ -109,8 +109,15 @@ function getAllFeeds($limit = 10, $offset = 0, $getTotalCount = false)
         // So we first check if we have a complete cache
         if (file_exists($combinedCacheFile) && (time() - filemtime($combinedCacheFile) < $cacheTime)) {
             $cachedData = json_decode(file_get_contents($combinedCacheFile), true);
-            
+
             if ($cachedData && !empty($cachedData['items'])) {
+                if (!isset($cachedData['timestamp'])) {
+                    $cachedData['timestamp'] = filemtime($combinedCacheFile);
+                }
+
+                // Calculate timestamp from cache metadata
+                $result['timestamp'] = $cachedData['timestamp'];
+
                 // Get total count before slicing for pagination
                 $totalItems = count($cachedData['items']);
                 
@@ -348,7 +355,7 @@ function getAllFeeds($limit = 10, $offset = 0, $getTotalCount = false)
             'timestamp' => time(),
             'items' => $allItems
         ];
-        
+
         if (!file_put_contents($combinedCacheFile, json_encode($combinedData))) {
             Logger::error("Failed to write combined cache file", [
                 'file' => $combinedCacheFile
@@ -360,6 +367,9 @@ function getAllFeeds($limit = 10, $offset = 0, $getTotalCount = false)
         
         // Apply pagination
         $result['items'] = array_slice($allItems, $offset, $limit);
+
+        // Set result timestamp from combined cache
+        $result['timestamp'] = $combinedData['timestamp'];
         
         // Check if there are more items
         $result['hasMore'] = ($offset + $limit) < $totalItems;

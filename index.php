@@ -2,8 +2,12 @@
 
 <?php
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+if (getenv('APP_DEBUG') === 'true') {
+    ini_set('display_errors', '1');
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', '0');
+}
 
 // Include functions
 require_once 'functions.php';

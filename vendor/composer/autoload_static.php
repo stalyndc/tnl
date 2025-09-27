@@ -21,6 +21,14 @@ class ComposerStaticInitecc0f9a7764dd2a81cea71922ae9a933
     );
 
     public static $classMap = array (
+        'App\\Cache\\CacheRepository' => __DIR__ . '/../..' . '/src/Cache/CacheRepository.php',
+        'App\\Config\\AppConfig' => __DIR__ . '/../..' . '/src/Config/AppConfig.php',
+        'App\\Config\\FeedRepository' => __DIR__ . '/../..' . '/src/Config/FeedRepository.php',
+        'App\\Core\\Container' => __DIR__ . '/../..' . '/src/Core/Container.php',
+        'App\\Http\\FeedClient' => __DIR__ . '/../..' . '/src/Http/FeedClient.php',
+        'App\\Services\\FeedAggregator' => __DIR__ . '/../..' . '/src/Services/FeedAggregator.php',
+        'App\\Support\\ContentFormatter' => __DIR__ . '/../..' . '/src/Support/ContentFormatter.php',
+        'App\\Support\\TimeFormatter' => __DIR__ . '/../..' . '/src/Support/TimeFormatter.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
     );
 

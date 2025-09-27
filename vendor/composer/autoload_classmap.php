@@ -6,5 +6,13 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Cache\\CacheRepository' => $baseDir . '/src/Cache/CacheRepository.php',
+    'App\\Config\\AppConfig' => $baseDir . '/src/Config/AppConfig.php',
+    'App\\Config\\FeedRepository' => $baseDir . '/src/Config/FeedRepository.php',
+    'App\\Core\\Container' => $baseDir . '/src/Core/Container.php',
+    'App\\Http\\FeedClient' => $baseDir . '/src/Http/FeedClient.php',
+    'App\\Services\\FeedAggregator' => $baseDir . '/src/Services/FeedAggregator.php',
+    'App\\Support\\ContentFormatter' => $baseDir . '/src/Support/ContentFormatter.php',
+    'App\\Support\\TimeFormatter' => $baseDir . '/src/Support/TimeFormatter.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
 );

@@ -16,7 +16,7 @@ echo "API directory writable: " . (is_writable('.') ? 'Yes' : 'No') . "\n";
 echo "Root directory writable: " . (is_writable('..') ? 'Yes' : 'No') . "\n";
 
 // Create logs directory if it doesn't exist
-$logsDir = '../logs';
+$logsDir = '../storage/logs';
 if (!is_dir($logsDir)) {
     echo "Creating logs directory: ";
     echo mkdir($logsDir, 0755, true) ? "Success" : "Failed";

@@ -1,0 +1,18 @@
+# Deployment & Testing Follow-Up
+
+## Testing
+- Regenerate caches by running the application once and verifying `storage/cache` is writable.
+- Exercise the API endpoint `api/get-more-articles.php` to confirm pagination still respects the new storage paths.
+- Add automated tests once the service-layer refactor is in place (e.g., PHPUnit suite for FeedAggregator).
+
+## Environment Variables
+- Set `APP_DEBUG=false` in production to suppress error output.
+- Configure web server to deny access to `storage/` (Apache `.htaccess` provided; add equivalent Nginx rules).
+
+## File Permissions
+- Ensure the web user can write to `storage/cache` and `storage/logs` when deployed.
+- Remove any legacy cron/jobs that reference the old `cache/` or `logs/` directories.
+
+## Housekeeping
+- Update deployment scripts or rsync excludes to retain `storage/.htaccess` while ignoring runtime files per `.gitignore`.
+- Consider adding a configurable cache TTL to avoid hard-coded 30-minute window in `getAllFeeds()`.

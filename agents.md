@@ -54,7 +54,7 @@ The News Log is a PHP-based tech news aggregator. The application now routes all
 2. Update configuration defaults in `config/app.php` or `config/feeds.php` as needed.
 3. Run linting and the PHPUnit suite (`vendor/bin/phpunit`) before committing.
 4. If deploying via git pull on Hostinger, ensure `composer install --no-dev` has been run locally so `vendor/` is committed.
-5. Optionally run `scripts/build-release.sh` to produce a zipped artifact.
+5. Optionally run `scripts/build-release.sh` to produce a zipped artifact (the CI workflow also generates one automatically).
 6. Document operational changes in `docs/`.
 
 ## Deployment Notes (Hostinger Shared Hosting)

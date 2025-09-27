@@ -14,6 +14,5 @@ The site code is pushed to GitHub and then pulled into Hostinger via Git. Becaus
 - Clear cached feed files if necessary (`storage/cache/*.json`).
 
 ## Continuous Deployment Considerations
-- If you want GitHub Actions to build the artifact, create a workflow that runs Composer, tests, and uploads an artifact or deploys via Hostinger's API (if available).
+- GitHub Actions workflow (`.github/workflows/build.yml`) runs Composer, executes PHPUnit, builds `dist/the-news-log.zip`, and uploads it as a build artifact. Download this artifact when you can't run the release script locally.
 - Ensure secrets (FTP, SSH) are stored securely in GitHub.
-

@@ -4,3 +4,6 @@ storage/logs/
 # Ignore other runtime artifacts
 *.log
 *.cache
+
+# Build artifacts
+dist/

@@ -21,3 +21,4 @@
 ## Housekeeping
 - Update deployment scripts or rsync excludes to retain `storage/.htaccess` while ignoring runtime files per `.gitignore`.
 - Consider adding a configurable cache TTL to avoid hard-coded 30-minute window in `getAllFeeds()`.
+- Use `scripts/build-release.sh` locally to generate `dist/the-news-log.zip`, then upload the archive via Hostinger file manager or FTP.

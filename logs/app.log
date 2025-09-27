@@ -1,4 +1,0 @@
-[2025-08-30 02:19:49] [ERROR] Failed to parse XML from source: The Verge {"errors":["CData section not finished\n\n\n\t\t\t\t\t\t\n<figure>\n\n<img alt=\"A hand holding the Ai\n","Premature end of data in tag content line 182\n"],"url":"https:\/\/www.theverge.com\/rss\/index.xml"}
-[2025-08-30 02:19:49] [ERROR] Failed to parse XML from source: Engadget {"errors":["StartTag: invalid element name\n","Premature end of data in tag publisher line 236\n"],"url":"https:\/\/www.engadget.com\/rss.xml"}
-[2025-08-30 02:19:49] [ERROR] Failed to parse XML from source: MIT AI NEWS {"errors":["Premature end of data in tag encoded line 18\n"],"url":"https:\/\/news.mit.edu\/topic\/mitartificial-intelligence2-rss.xml"}
-[2025-08-30 02:19:49] [ERROR] Failed to parse XML from source: Znet {"errors":["Premature end of data in tag guid line 1\n"],"url":"https:\/\/www.zdnet.com\/news\/rss.xml"}

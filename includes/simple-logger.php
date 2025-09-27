@@ -12,7 +12,7 @@ class SimpleLogger {
     const DEBUG = 'DEBUG';
     
     // Configuration
-    private $logFile = 'logs/app.log';
+    private $logFile = 'storage/logs/app.log';
     private $logLevel = self::ERROR; // Default to only log errors
     private $enabled = true;
     private $maxFileSize = 5242880; // 5MB

@@ -1,0 +1,6 @@
+storage/cache/
+storage/logs/
+
+# Ignore other runtime artifacts
+*.log
+*.cache

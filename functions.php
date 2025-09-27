@@ -49,7 +49,7 @@ function loadConfig($relativePath)
  */
 function getCacheDirectory()
 {
-    return __DIR__ . '/cache';
+    return __DIR__ . '/storage/cache';
 }
 
 /**

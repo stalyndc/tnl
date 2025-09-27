@@ -11,58 +11,69 @@
 require_once 'includes/simple-logger.php';
 
 /**
+ * Load a configuration file with simple memoization
+ *
+ * @param string $relativePath Path relative to project root
+ * @return mixed Configuration data
+ * @throws Exception When file is missing or invalid
+ */
+function loadConfig($relativePath)
+{
+    static $configCache = [];
+
+    $path = __DIR__ . '/' . ltrim($relativePath, '/');
+
+    if (isset($configCache[$path])) {
+        return $configCache[$path];
+    }
+
+    if (!file_exists($path)) {
+        throw new Exception('Configuration file not found: ' . $path);
+    }
+
+    $config = require $path;
+
+    if ($config === false || $config === null) {
+        throw new Exception('Configuration file returned no data: ' . $path);
+    }
+
+    $configCache[$path] = $config;
+
+    return $config;
+}
+
+/**
+ * Get absolute path to the cache directory
+ *
+ * @return string
+ */
+function getCacheDirectory()
+{
+    return __DIR__ . '/cache';
+}
+
+/**
  * Get available feed sources
  * 
  * @return array List of feed sources
  */
 function getFeedSources()
 {
-    return [
-        'theverge' => [
-            'name' => 'The Verge',
-            'url' => 'https://www.theverge.com/rss/index.xml'
-        ],
-        'engadget' => [
-            'name' => 'Engadget',
-            'url' => 'https://www.engadget.com/rss.xml'
-        ],
-        'xda' => [
-            'name' => 'XDA',
-            'url' => 'https://simplefeedmaker.com/feed/502eafede7c6.xml'
-        ],
-        'techcrunch' => [
-            'name' => 'TechCrunch',
-            'url' => 'https://techcrunch.com/feed/'
-        ],
-        'arstechnica' => [
-            'name' => 'Arstechnica',
-            'url' => 'https://feeds.arstechnica.com/arstechnica/technology-lab'
-        ],
-        'cnbc' => [
-            'name' => 'CNBC',
-            'url' => 'https://simplefeedmaker.com/feed/32e9df30cc29.xml'
-        ],
-        'mit-ai-news' => [
-            'name' => 'MIT AI NEWS',
-            'url' => 'https://news.mit.edu/topic/mitartificial-intelligence2-rss.xml'
-        ],
-        'deepmind' => [
-            'name' => 'Deepmind',
-            'url' => 'https://simplefeedmaker.com/feed/0f5dd3440a0d.xml'
-        ],
-        'znet' => [
-            'name' => 'Znet',
-            'url' => 'https://www.zdnet.com/news/rss.xml'
-        ],
-        'big-think' => [
-            'name' => 'Big Think',
-            'url' => 'https://simplefeedmaker.com/feed/6dda1d9c05d3.xml'
-        ],
-        'the-news-stack' => [
-            'name' => 'The News Stack',
-            'url' => 'https://thenewstack.io/blog/feed/'
-        ]
-    ];
+    static $sources = null;
+
+    if ($sources !== null) {
+        return $sources;
+    }
+
+    $loaded = loadConfig('config/feeds.php');
+
+    if (!is_array($loaded) || empty($loaded)) {
+        throw new Exception('Feed configuration is invalid');
+    }
+
+    $sources = $loaded;
+
+    return $sources;
 }
 
 /**
@@ -86,8 +97,10 @@ function getAllFeeds($limit = 10, $offset = 0, $getTotalCount = false)
         ];
 
         // Create cache directory if it doesn't exist
-        if (!is_dir('cache')) {
-            if (!mkdir('cache', 0755, true)) {
+        $cacheDir = getCacheDirectory();
+
+        if (!is_dir($cacheDir)) {
+            if (!mkdir($cacheDir, 0755, true)) {
                 Logger::error('Failed to create cache directory');
                 throw new Exception('Failed to create cache directory');
             }
@@ -102,7 +115,7 @@ function getAllFeeds($limit = 10, $offset = 0, $getTotalCount = false)
         }
 
         // Check if we have a valid combined cache
-        $combinedCacheFile = 'cache/combined_feed.json';
+        $combinedCacheFile = getCacheDirectory() . '/combined_feed.json';
         $cacheTime = 30 * 60; // 30 minutes cache
 
         // For pagination, we need all items before slicing
@@ -145,7 +158,7 @@ function getAllFeeds($limit = 10, $offset = 0, $getTotalCount = false)
         // Prepare curl handles for each source
         foreach ($sources as $id => $source) {
             // First, check for cached data for this source
-            $cacheFile = 'cache/feed_' . $id . '.json';
+            $cacheFile = getCacheDirectory() . '/feed_' . $id . '.json';
             
             if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTime)) {
                 // Use cached data for this source
@@ -312,7 +325,7 @@ function getAllFeeds($limit = 10, $offset = 0, $getTotalCount = false)
                 
                 // Cache the source data
                 if (!empty($sourceData['items'])) {
-                    $cacheFile = 'cache/feed_' . $id . '.json';
+                    $cacheFile = getCacheDirectory() . '/feed_' . $id . '.json';
                     if (!file_put_contents($cacheFile, json_encode($sourceData))) {
                         Logger::error("Failed to write cache file for {$source['name']}", [
                             'file' => $cacheFile
@@ -407,9 +420,9 @@ function getAllFeeds($limit = 10, $offset = 0, $getTotalCount = false)
 function cleanupOldCacheFiles($maxAge = 604800) // 7 days = 60*60*24*7
 {
     try {
-        $cacheDir = 'cache/';
+        $cacheDir = getCacheDirectory();
         if (is_dir($cacheDir)) {
-            $files = glob($cacheDir . '*.json');
+            $files = glob(rtrim($cacheDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*.json');
             foreach ($files as $file) {
                 if (filemtime($file) < time() - $maxAge) {
                     if (!unlink($file)) {

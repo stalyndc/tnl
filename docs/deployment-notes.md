@@ -22,3 +22,5 @@
 - Update deployment scripts or rsync excludes to retain `storage/.htaccess` while ignoring runtime files per `.gitignore`.
 - Consider adding a configurable cache TTL to avoid hard-coded 30-minute window in `getAllFeeds()`.
 - Use `scripts/build-release.sh` locally to generate `dist/the-news-log.zip`, then upload the archive via Hostinger file manager or FTP.
+- If deploying via Git (GitHub -> Hostinger), commit the `vendor/` directory and updated `composer.lock` after running `composer install --no-dev` locally.
+- See `docs/github-deployment.md` for detailed git workflow notes.

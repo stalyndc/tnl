@@ -1,0 +1,10 @@
+{
+    "name": "thenewslog/app",
+    "description": "The News Log application",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}

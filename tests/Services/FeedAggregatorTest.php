@@ -57,6 +57,11 @@ final class FeedAggregatorTest extends TestCase
         $feedClient = new class extends FeedClient {
             public int $fetchCalls = 0;
 
+            public function __construct()
+            {
+                parent::__construct(10);
+            }
+
             public function fetch(array $sources): array
             {
                 $this->fetchCalls++;
@@ -118,6 +123,11 @@ XML;
         $feedClient = new class extends FeedClient {
             public int $fetchCalls = 0;
 
+            public function __construct()
+            {
+                parent::__construct(10);
+            }
+
             public function fetch(array $sources): array
             {
                 $this->fetchCalls++;
@@ -168,4 +178,3 @@ XML;
         $this->assertSame(1, $metrics['test-feed']['success_count']);
     }
 }
-

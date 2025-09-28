@@ -20,6 +20,7 @@ class DummyFeedClient extends FeedClient
 
     public function __construct(private string $rss)
     {
+        parent::__construct(10);
     }
 
     public function fetch(array $sources): array
@@ -142,4 +143,3 @@ XML;
         $this->assertSame('Test Feed', $sources['test-feed']['name']);
     }
 }
-

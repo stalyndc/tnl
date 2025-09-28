@@ -56,6 +56,7 @@ The News Log is a PHP-based tech news aggregator. The application now routes all
   ```bash
   php scripts/feed-admin.php list
   php scripts/feed-admin.php add <id> "Feed Name" https://example.com/feed.xml --enabled
+  php scripts/feed-admin.php update <id> "Feed Name" https://example.com/feed.xml
   ```
   Admin web UI: `/admin/feeds.php` (requires `FEED_ADMIN_USER`/`FEED_ADMIN_PASS`).
 - **Override configuration via environment**

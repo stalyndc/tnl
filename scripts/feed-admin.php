@@ -43,6 +43,9 @@ try {
         case 'add':
             handleAdd($repo, $argvCopy);
             break;
+        case 'update':
+            handleUpdate($repo, $argvCopy);
+            break;
         default:
             printHelp();
             exit(1);
@@ -105,6 +108,21 @@ function handleAdd(FeedRepository $repo, array $args): void
     printf("Feed '%s' added (%s).\n", $id, $enabled ? 'enabled' : 'disabled');
 }
 
+function handleUpdate(FeedRepository $repo, array $args): void
+{
+    $id = $args[1] ?? null;
+    $name = $args[2] ?? null;
+    $url = $args[3] ?? null;
+
+    if (!$id || !$name || !$url) {
+        fwrite(STDERR, "Usage: php scripts/feed-admin.php update <id> <name> <url>\n");
+        exit(1);
+    }
+
+    $repo->updateDetails($id, $name, $url);
+    printf("Feed '%s' updated.\n", $id);
+}
+
 function printHelp(): void
 {
     echo <<<TEXT
@@ -114,6 +132,7 @@ Usage:
   php scripts/feed-admin.php enable <id>
   php scripts/feed-admin.php disable <id>
   php scripts/feed-admin.php add <id> <name> <url> [--enabled|--disabled]
+  php scripts/feed-admin.php update <id> <name> <url>
 
 Provide --token=<value> if FEED_ADMIN_TOKEN is set in the environment.
 TEXT;

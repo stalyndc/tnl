@@ -1,6 +1,11 @@
 <?php
 // Set the title for the page
 $pageTitle = "About | The News Log";
+
+// Build a canonical URL that works in local dev and production
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'thenewslog.org';
+$canonicalUrl = $scheme . '://' . $host . '/about';
 ?>
 
 <!DOCTYPE html>
@@ -11,7 +16,8 @@ $pageTitle = "About | The News Log";
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
     <meta name="description" content="Learn more about The News Log - a minimalist news aggregator that brings you the latest headlines from top sources around the web.">
-    
+    <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
+
     <!-- IBM Plex Sans and Mono fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +32,7 @@ $pageTitle = "About | The News Log";
     <!-- Open Graph / Social Media Meta Tags -->
     <meta property="og:title" content="<?php echo $pageTitle; ?>">
     <meta property="og:description" content="Learn more about The News Log - a minimalist news aggregator that brings you the latest headlines from top sources around the web.">
-    <meta property="og:url" content="https://thenewslog.org/about">
+    <meta property="og:url" content="<?php echo htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://thenewslog.org/img/og-image.jpg">
     <meta name="twitter:card" content="summary_large_image">

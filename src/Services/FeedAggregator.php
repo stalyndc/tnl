@@ -100,10 +100,33 @@ class FeedAggregator
             $responses = $this->feedClient->fetch($sourcesToFetch);
 
             foreach ($responses as $id => $response) {
-                $content = $response['content'];
-                $source = $response['source'];
+                $content = $response['content'] ?? '';
+                $source = $response['source'] ?? [];
+                $httpCode = isset($response['http_code']) ? (int) $response['http_code'] : 200;
+                $transportError = $response['error'] ?? null;
 
-                if (!$content) {
+                if ($transportError !== null) {
+                    $this->metricsRepository->recordFailure($id, $transportError);
+                    \Logger::warning('Transport error while fetching feed source', [
+                        'source' => $source['name'] ?? $id,
+                        'url' => $source['url'] ?? null,
+                        'error' => $transportError
+                    ]);
+                    continue;
+                }
+
+                if ($httpCode >= 400 || $httpCode === 0) {
+                    $reason = sprintf('HTTP %d', $httpCode);
+                    $this->metricsRepository->recordFailure($id, $reason);
+                    \Logger::warning('Non-success HTTP status received from feed source', [
+                        'source' => $source['name'] ?? $id,
+                        'url' => $source['url'] ?? null,
+                        'status' => $httpCode
+                    ]);
+                    continue;
+                }
+
+                if ($content === false || $content === '') {
                     $this->metricsRepository->recordFailure($id, 'Empty response');
                     \Logger::warning('Empty content from source', [
                         'source' => $source['name'] ?? $id,

@@ -16,9 +16,46 @@ require_once 'functions.php';
 // Set the title for the page
 $pageTitle = "The News Log";
 
+// Pagination controls
+$itemsPerPage = 10;
+$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+if ($page < 1) {
+    $page = 1;
+}
+
+$offset = ($page - 1) * $itemsPerPage;
+
 // Get feed data (now with pagination support)
-$initialLimit = 10; // Initial number of items to load
-$feedData = getAllFeeds($initialLimit, 0, true); // true to get total count
+$feedData = getAllFeeds($itemsPerPage, $offset, true); // true to get total count
+
+$totalCount = isset($feedData['totalCount']) ? (int) $feedData['totalCount'] : (isset($feedData['items']) ? count($feedData['items']) : 0);
+$totalPages = $totalCount > 0 ? (int) ceil($totalCount / $itemsPerPage) : 1;
+
+// If someone requests a page past the end, redirect to the last page worth of results
+if ($page > $totalPages && $totalPages > 0) {
+    $page = $totalPages;
+    $offset = ($page - 1) * $itemsPerPage;
+    $feedData = getAllFeeds($itemsPerPage, $offset, true);
+}
+
+// Recalculate totals after potential bounds adjustment
+$totalCount = isset($feedData['totalCount']) ? (int) $feedData['totalCount'] : (isset($feedData['items']) ? count($feedData['items']) : 0);
+$totalPages = $totalCount > 0 ? (int) ceil($totalCount / $itemsPerPage) : 1;
+
+$previousPageUrl = $page > 1 ? (($page - 1) === 1 ? '/' : '/?page=' . ($page - 1)) : null;
+$nextPageUrl = ($page < $totalPages) ? '/?page=' . ($page + 1) : null;
+
+// Canonical URL helpers
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'thenewslog.org';
+$baseUrl = rtrim($scheme . '://' . $host, '/');
+$canonicalUrl = $baseUrl . '/';
+if ($page > 1) {
+    $canonicalUrl = $baseUrl . '/?page=' . $page;
+}
+
+// Keep compatibility with the JS enhancement
+$initialLimit = $itemsPerPage;
 ?>
 
 <!DOCTYPE html>
@@ -41,10 +78,12 @@ $feedData = getAllFeeds($initialLimit, 0, true); // true to get total count
     <!-- Stylesheet -->
     <link rel="stylesheet" href="style.css">
 
+    <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
+
     <!-- Open Graph / Social Media Meta Tags -->
     <meta property="og:title" content="<?php echo $pageTitle; ?>">
     <meta property="og:description" content="A minimalist tech news aggregator bringing you the latest headlines from top sources around the web.">
-    <meta property="og:url" content="https://thenewslog.org/">
+    <meta property="og:url" content="<?php echo htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://thenewslog.org/img/og-image.jpg">
     <meta name="twitter:card" content="summary_large_image">
@@ -214,13 +253,27 @@ $feedData = getAllFeeds($initialLimit, 0, true); // true to get total count
                     <?php endforeach; ?>
                 </ul>
 
+                <?php if ($totalPages > 1): ?>
+                <nav class="pagination-nav" aria-label="Pagination">
+                    <span class="pagination-status">Page <?php echo $page; ?> of <?php echo max(1, $totalPages); ?></span>
+                    <div class="pagination-links">
+                        <?php if ($previousPageUrl !== null): ?>
+                            <a class="pagination-link prev" href="<?php echo htmlspecialchars($previousPageUrl, ENT_QUOTES, 'UTF-8'); ?>">Previous</a>
+                        <?php endif; ?>
+                        <?php if ($nextPageUrl !== null): ?>
+                            <a class="pagination-link next" href="<?php echo htmlspecialchars($nextPageUrl, ENT_QUOTES, 'UTF-8'); ?>">Next</a>
+                        <?php endif; ?>
+                    </div>
+                </nav>
+                <?php endif; ?>
+
                 <!-- Load More Button -->
                 <?php if ($feedData['hasMore']): ?>
                 <div class="load-more-container">
                     <button id="load-more-button" 
                             class="load-more-button" 
-                            data-offset="<?php echo $initialLimit; ?>" 
-                            data-limit="<?php echo $initialLimit; ?>"
+                            data-offset="<?php echo $offset + $itemsPerPage; ?>" 
+                            data-limit="<?php echo $itemsPerPage; ?>"
                             data-total="<?php echo isset($feedData['totalCount']) ? $feedData['totalCount'] : 0; ?>">
                         Load More Articles
                     </button>

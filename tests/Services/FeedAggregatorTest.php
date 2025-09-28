@@ -177,4 +177,53 @@ XML;
         $metrics = $metricsRepository->all();
         $this->assertSame(1, $metrics['test-feed']['success_count']);
     }
+
+    public function testRecordsFailureWhenHttpErrorReturned(): void
+    {
+        $feedRepository = new \App\Config\FeedRepository($this->configPath);
+        $metricsRepository = new FeedMetricsRepository($this->metricsPath);
+
+        $feedClient = new class extends FeedClient {
+            public function __construct()
+            {
+                parent::__construct(10);
+            }
+
+            public function fetch(array $sources): array
+            {
+                return [
+                    'test-feed' => [
+                        'content' => false,
+                        'source' => [
+                            'name' => 'Test Feed',
+                            'url' => 'https://example.com/feed'
+                        ],
+                        'http_code' => 503,
+                        'error' => null
+                    ]
+                ];
+            }
+        };
+
+        $cacheRepository = new CacheRepository($this->cacheDir);
+
+        $aggregator = new FeedAggregator(
+            $feedRepository,
+            $cacheRepository,
+            $feedClient,
+            $metricsRepository,
+            cacheTtl: 1800,
+            cacheCleanupMaxAge: 604800
+        );
+
+        $result = $aggregator->getAllFeeds(10, 0, true);
+
+        $this->assertSame([], $result['items']);
+        $this->assertFalse($result['hasMore']);
+
+        $metrics = $metricsRepository->all();
+        $this->assertArrayHasKey('test-feed', $metrics);
+        $this->assertSame(1, $metrics['test-feed']['failure_count']);
+        $this->assertSame('HTTP 503', $metrics['test-feed']['last_error']);
+    }
 }

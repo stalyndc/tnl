@@ -46,16 +46,23 @@ class FeedClient
 
         $results = [];
         foreach ($handles as $id => $handle) {
+            $content = curl_multi_getcontent($handle);
+            $errorCode = curl_errno($handle);
+            $errorMessage = $errorCode !== 0 ? curl_error($handle) : null;
+            $info = curl_getinfo($handle);
+            $httpCode = isset($info['http_code']) ? (int) $info['http_code'] : 0;
+
             $results[$id] = [
-                'content' => curl_multi_getcontent($handle),
-                'source' => $sources[$id]
+                'content' => $content,
+                'source' => $sources[$id],
+                'http_code' => $httpCode,
+                'error' => $errorMessage,
             ];
 
-            $error = curl_error($handle);
-            if ($error) {
+            if ($errorMessage !== null) {
                 \Logger::error('cURL error', [
-                    'error' => $error,
-                    'code' => curl_errno($handle),
+                    'error' => $errorMessage,
+                    'code' => $errorCode,
                     'url' => $sources[$id]['url'] ?? ''
                 ]);
             }

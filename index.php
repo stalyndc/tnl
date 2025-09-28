@@ -267,19 +267,6 @@ $initialLimit = $itemsPerPage;
                 </nav>
                 <?php endif; ?>
 
-                <!-- Load More Button -->
-                <?php if ($feedData['hasMore']): ?>
-                <div class="load-more-container">
-                    <button id="load-more-button" 
-                            class="load-more-button" 
-                            data-offset="<?php echo $offset + $itemsPerPage; ?>" 
-                            data-limit="<?php echo $itemsPerPage; ?>"
-                            data-total="<?php echo isset($feedData['totalCount']) ? $feedData['totalCount'] : 0; ?>">
-                        Load More Articles
-                    </button>
-                </div>
-                <?php endif; ?>
-
             <?php else: ?>
                 <!-- Empty state -->
                 <div class="empty-message">

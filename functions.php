@@ -11,6 +11,7 @@ use App\Cache\CacheRepository;
 use App\Core\Container;
 use App\Config\AppConfig;
 use App\Config\FeedRepository;
+use App\Config\FeedMetricsRepository;
 use App\Http\FeedClient;
 use App\Services\FeedAggregator;
 use App\Support\ContentFormatter;
@@ -36,6 +37,10 @@ function registerDefaultServices(Container $container): void
 
     $container->set(CacheRepository::class, function (Container $c) {
         return new CacheRepository(__DIR__ . '/storage/cache');
+    });
+
+    $container->set(FeedMetricsRepository::class, function (Container $c) {
+        return new FeedMetricsRepository(__DIR__ . '/storage/feed-metrics.json');
     });
 
     $container->set(FeedClient::class, function (Container $c) {
@@ -67,6 +72,7 @@ function registerDefaultServices(Container $container): void
             $c->get(FeedRepository::class),
             $c->get(CacheRepository::class),
             $c->get(FeedClient::class),
+            $c->get(FeedMetricsRepository::class),
             $cacheTtl,
             $cleanup
         );
@@ -91,6 +97,11 @@ function getFeedClient(): FeedClient
 function getFeedAggregator(): FeedAggregator
 {
     return appContainer()->get(FeedAggregator::class);
+}
+
+function getFeedMetricsRepository(): FeedMetricsRepository
+{
+    return appContainer()->get(FeedMetricsRepository::class);
 }
 
 function getCacheDirectory(): string

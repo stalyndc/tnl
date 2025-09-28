@@ -65,5 +65,15 @@ final class FeedRepositoryTest extends TestCase
         $ids = array_column($all, 'id');
         $this->assertContains('gamma', $ids);
     }
-}
 
+    public function testUpdateDetails(): void
+    {
+        $repo = new FeedRepository($this->jsonPath);
+        $repo->updateDetails('alpha', 'Alpha Updated', 'https://example.com/alpha-updated');
+
+        $all = $repo->allWithMeta();
+        $alpha = array_values(array_filter($all, fn($feed) => $feed['id'] === 'alpha'))[0];
+        $this->assertSame('Alpha Updated', $alpha['name']);
+        $this->assertSame('https://example.com/alpha-updated', $alpha['url']);
+    }
+}

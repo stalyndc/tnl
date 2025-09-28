@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Cache\CacheRepository;
 use App\Config\FeedRepository;
+use App\Config\FeedMetricsRepository;
 use App\Http\FeedClient;
 use App\Support\ContentFormatter;
 use Exception;
@@ -14,6 +15,7 @@ class FeedAggregator
     private FeedRepository $feedRepository;
     private CacheRepository $cacheRepository;
     private FeedClient $feedClient;
+    private FeedMetricsRepository $metricsRepository;
     private int $cacheTtl;
     private int $cacheCleanupMaxAge;
 
@@ -21,12 +23,14 @@ class FeedAggregator
         FeedRepository $feedRepository,
         CacheRepository $cacheRepository,
         FeedClient $feedClient,
+        FeedMetricsRepository $metricsRepository,
         int $cacheTtl,
         int $cacheCleanupMaxAge
     ) {
         $this->feedRepository = $feedRepository;
         $this->cacheRepository = $cacheRepository;
         $this->feedClient = $feedClient;
+        $this->metricsRepository = $metricsRepository;
         $this->cacheTtl = $cacheTtl;
         $this->cacheCleanupMaxAge = $cacheCleanupMaxAge;
     }
@@ -100,6 +104,7 @@ class FeedAggregator
                 $source = $response['source'];
 
                 if (!$content) {
+                    $this->metricsRepository->recordFailure($id, 'Empty response');
                     \Logger::warning('Empty content from source', [
                         'source' => $source['name'] ?? $id,
                         'url' => $source['url'] ?? null
@@ -111,6 +116,9 @@ class FeedAggregator
                 if (!empty($parsed['items'])) {
                     $sourceData[$id] = $parsed;
                     $this->cacheRepository->writeSource($id, $parsed);
+                    $this->metricsRepository->recordSuccess($id);
+                } else {
+                    $this->metricsRepository->recordFailure($id, 'Parsed feed returned no items');
                 }
             }
         }
@@ -159,6 +167,7 @@ class FeedAggregator
     {
         try {
             if (!preg_match('/<\?xml/', $content)) {
+                $this->metricsRepository->recordFailure($id, 'Malformed XML (missing declaration)');
                 \Logger::warning('Invalid XML format from source', [
                     'source' => $source['name'] ?? $id,
                     'url' => $source['url'] ?? null,
@@ -175,9 +184,11 @@ class FeedAggregator
             libxml_use_internal_errors(false);
 
             if (!$xml instanceof SimpleXMLElement) {
+                $errorMessages = array_map(static fn($error) => $error->message, $errors);
+                $this->metricsRepository->recordFailure($id, 'XML parse error');
                 \Logger::error('Failed to parse XML from source', [
                     'source' => $source['name'] ?? $id,
-                    'errors' => array_map(static fn($error) => $error->message, $errors)
+                    'errors' => $errorMessages
                 ]);
 
                 return ['timestamp' => time(), 'items' => []];
@@ -190,6 +201,7 @@ class FeedAggregator
                 'items' => $items
             ];
         } catch (Exception $e) {
+            $this->metricsRepository->recordFailure($id, $e->getMessage());
             \Logger::error('Error processing feed', [
                 'source' => $source['name'] ?? $id,
                 'error' => $e->getMessage()

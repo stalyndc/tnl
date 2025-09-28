@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Functions;
 
 use App\Cache\CacheRepository;
+use App\Config\FeedMetricsRepository;
 use App\Config\FeedRepository;
 use App\Core\Container;
 use App\Http\FeedClient;
@@ -41,6 +42,7 @@ class HelpersTest extends TestCase
 {
     private string $cacheDir;
     private string $configPath;
+    private string $metricsPath;
     private DummyFeedClient $feedClient;
 
     protected function setUp(): void
@@ -61,6 +63,8 @@ class HelpersTest extends TestCase
             ]
         ]));
 
+        $this->metricsPath = $this->cacheDir . '/metrics.json';
+
         $rss = <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -79,8 +83,11 @@ XML;
 
         $container = appContainer();
 
-        $container->set(FeedRepository::class, function (Container $c) {
-            return new FeedRepository($this->configPath);
+        $configPath = $this->configPath;
+        $metricsPath = $this->metricsPath;
+
+        $container->set(FeedRepository::class, function (Container $c) use ($configPath) {
+            return new FeedRepository($configPath);
         });
 
         $cacheRepository = new CacheRepository($this->cacheDir);
@@ -88,15 +95,20 @@ XML;
             return $cacheRepository;
         });
 
+        $container->set(FeedMetricsRepository::class, function (Container $c) use ($metricsPath) {
+            return new FeedMetricsRepository($metricsPath);
+        });
+
         $container->set(FeedClient::class, function (Container $c) {
             return $this->feedClient;
         });
 
-        $container->set(FeedAggregator::class, function (Container $c) use ($cacheRepository) {
+        $container->set(FeedAggregator::class, function (Container $c) use ($cacheRepository, $metricsPath, $configPath) {
             return new FeedAggregator(
-                $c->get(FeedRepository::class),
+                new FeedRepository($configPath),
                 $cacheRepository,
                 $this->feedClient,
+                new FeedMetricsRepository($metricsPath),
                 cacheTtl: 1800,
                 cacheCleanupMaxAge: 604800
             );
@@ -110,6 +122,7 @@ XML;
             @unlink($file);
         }
         @unlink($this->configPath);
+        @unlink($this->metricsPath);
         @rmdir($this->cacheDir);
         parent::tearDown();
     }
@@ -129,3 +142,4 @@ XML;
         $this->assertSame('Test Feed', $sources['test-feed']['name']);
     }
 }
+

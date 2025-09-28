@@ -95,6 +95,27 @@ class FeedRepository
         $this->persist($feeds);
     }
 
+    public function updateDetails(string $id, string $name, string $url): void
+    {
+        $feeds = $this->loadFeeds();
+        $updated = false;
+
+        foreach ($feeds as &$feed) {
+            if ($feed['id'] === $id) {
+                $feed['name'] = $name;
+                $feed['url'] = $url;
+                $updated = true;
+                break;
+            }
+        }
+
+        if (!$updated) {
+            throw new Exception('Feed with id ' . $id . ' not found');
+        }
+
+        $this->persist($feeds);
+    }
+
     private function loadFeeds(): array
     {
         if ($this->feeds !== null) {

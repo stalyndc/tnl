@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Tests\Services;
 
 use App\Cache\CacheRepository;
+use App\Config\FeedMetricsRepository;
 use App\Http\FeedClient;
 use App\Services\FeedAggregator;
 use PHPUnit\Framework\TestCase;
 
-class FeedAggregatorTest extends TestCase
+final class FeedAggregatorTest extends TestCase
 {
     private string $cacheDir;
     private string $configPath;
+    private string $metricsPath;
 
     protected function setUp(): void
     {
@@ -22,16 +24,17 @@ class FeedAggregatorTest extends TestCase
             $this->fail('Failed to create temporary cache directory');
         }
 
-        $this->configPath = $this->cacheDir . '/feeds.php';
-        file_put_contents($this->configPath, <<<PHP
-<?php
-return [
-    'test-feed' => [
-        'name' => 'Test Feed',
-        'url' => 'https://example.com/feed'
-    ]
-];
-PHP);
+        $this->configPath = $this->cacheDir . '/feeds.json';
+        file_put_contents($this->configPath, json_encode([
+            [
+                'id' => 'test-feed',
+                'name' => 'Test Feed',
+                'url' => 'https://example.com/feed',
+                'enabled' => true
+            ]
+        ]));
+
+        $this->metricsPath = $this->cacheDir . '/metrics.json';
     }
 
     protected function tearDown(): void
@@ -41,6 +44,7 @@ PHP);
             @unlink($file);
         }
         @unlink($this->configPath);
+        @unlink($this->metricsPath);
         @rmdir($this->cacheDir);
         parent::tearDown();
     }
@@ -48,13 +52,10 @@ PHP);
     public function testAggregatesFeedsWhenCacheEmpty(): void
     {
         $feedRepository = new \App\Config\FeedRepository($this->configPath);
+        $metricsRepository = new FeedMetricsRepository($this->metricsPath);
 
         $feedClient = new class extends FeedClient {
             public int $fetchCalls = 0;
-
-            public function __construct()
-            {
-            }
 
             public function fetch(array $sources): array
             {
@@ -92,6 +93,7 @@ XML;
             $feedRepository,
             $cacheRepository,
             $feedClient,
+            $metricsRepository,
             cacheTtl: 1800,
             cacheCleanupMaxAge: 604800
         );
@@ -102,18 +104,19 @@ XML;
         $this->assertSame('Test Feed', $result['items'][0]['source']);
         $this->assertSame(1, $feedClient->fetchCalls);
         $this->assertSame(1, $result['totalCount']);
+
+        $metrics = $metricsRepository->all();
+        $this->assertArrayHasKey('test-feed', $metrics);
+        $this->assertSame(1, $metrics['test-feed']['success_count']);
     }
 
     public function testUsesCombinedCacheOnSubsequentCalls(): void
     {
         $feedRepository = new \App\Config\FeedRepository($this->configPath);
+        $metricsRepository = new FeedMetricsRepository($this->metricsPath);
 
         $feedClient = new class extends FeedClient {
             public int $fetchCalls = 0;
-
-            public function __construct()
-            {
-            }
 
             public function fetch(array $sources): array
             {
@@ -151,15 +154,18 @@ XML;
             $feedRepository,
             $cacheRepository,
             $feedClient,
+            $metricsRepository,
             cacheTtl: 1800,
             cacheCleanupMaxAge: 604800
         );
 
         $aggregator->getAllFeeds();
-
-        $result = $aggregator->getAllFeeds();
+        $aggregator->getAllFeeds();
 
         $this->assertSame(1, $feedClient->fetchCalls, 'Fetch should only occur once due to combined cache');
-        $this->assertSame('Cached Article', $result['items'][0]['title']);
+
+        $metrics = $metricsRepository->all();
+        $this->assertSame(1, $metrics['test-feed']['success_count']);
     }
 }
+

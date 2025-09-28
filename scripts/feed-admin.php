@@ -47,7 +47,7 @@ try {
             printHelp();
             exit(1);
     }
-} catch (Exception $e) {
+} catch (\Exception $e) {
     fwrite(STDERR, 'Error: ' . $e->getMessage() . "\n");
     exit(1);
 }
@@ -118,4 +118,3 @@ Usage:
 Provide --token=<value> if FEED_ADMIN_TOKEN is set in the environment.
 TEXT;
 }
-

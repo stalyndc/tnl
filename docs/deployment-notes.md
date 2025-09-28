@@ -27,3 +27,4 @@
 - Use `scripts/clear-cache.php` to purge stale cache/log files when needed.
 - Environment overrides: copy `.env.example` to `.env` and adjust values (`APP_CACHE_TTL`, `APP_CACHE_CLEANUP_MAX_AGE`, `APP_HTTP_TIMEOUT`). Ensure `.env` is present on Hostinger if you rely on non-default values.
 - Manage feeds via `php scripts/feed-admin.php` (requires `FEED_ADMIN_TOKEN`). Commands: `list`, `add`, `enable`, `disable`.
+- Web dashboard available at `/admin/feeds.php` (protected via `FEED_ADMIN_USER` / `FEED_ADMIN_PASS`).

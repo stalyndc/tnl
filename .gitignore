@@ -9,5 +9,8 @@ storage/logs/
 .env
 .env.local
 
+# Local ad config
+Ads.txt 
+
 # Build artifacts
 dist/

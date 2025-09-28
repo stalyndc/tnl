@@ -360,6 +360,7 @@ function formatIso(?string $iso): string
                             <div><strong>Consec. failures:</strong> <?php echo (int) ($feedMetrics['consecutive_failures'] ?? 0); ?></div>
                             <div><strong>Last success:</strong> <?php echo h(formatIso($feedMetrics['last_success'] ?? null)); ?></div>
                             <div><strong>Last failure:</strong> <?php echo h(formatIso($feedMetrics['last_failure'] ?? null)); ?></div>
+                            <div><strong>Last HTTP:</strong> <?php echo isset($feedMetrics['last_http_status']) ? h((string) $feedMetrics['last_http_status']) : '—'; ?></div>
                             <?php if (!empty($feedMetrics['last_error'])): ?>
                                 <div><strong>Last error:</strong> <?php echo h($feedMetrics['last_error']); ?></div>
                             <?php endif; ?>

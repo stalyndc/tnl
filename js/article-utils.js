@@ -167,7 +167,11 @@ function createArticleElement(item) {
     hasTimestamp = true;
   }
 
-  if (item.source) {
+  const sourceList = Array.isArray(item.sources) && item.sources.length > 0
+    ? item.sources
+    : (item.source ? [{ name: item.source }] : []);
+
+  if (sourceList.length > 0) {
     if (hasTimestamp) {
       const dot = document.createElement('span');
       dot.className = 'article-dot';
@@ -182,13 +186,24 @@ function createArticleElement(item) {
     source.setAttribute('itemscope', '');
     source.setAttribute('itemtype', 'https://schema.org/Organization');
 
+    const firstSource = sourceList[0];
+    const firstName = firstSource.name || firstSource.id || 'Unknown';
     const sourceNameMeta = document.createElement('meta');
     sourceNameMeta.setAttribute('itemprop', 'name');
-    sourceNameMeta.setAttribute('content', item.source);
+    sourceNameMeta.setAttribute('content', firstName);
     source.appendChild(sourceNameMeta);
-    source.appendChild(document.createTextNode(item.source));
+
+    const labels = sourceList.slice(0, 3).map((entry) => entry.name || entry.id || 'Unknown');
+    source.appendChild(document.createTextNode(labels.join(' · ')));
 
     metaDiv.appendChild(source);
+
+    if (sourceList.length > 3) {
+      const overflow = document.createElement('span');
+      overflow.className = 'article-source overflow';
+      overflow.textContent = `+${sourceList.length - 3}`;
+      metaDiv.appendChild(overflow);
+    }
   }
   
   content.appendChild(title);

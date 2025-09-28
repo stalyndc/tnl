@@ -26,7 +26,7 @@ class FeedMetricsRepository
         return $this->load();
     }
 
-    public function recordSuccess(string $id): void
+    public function recordSuccess(string $id, ?int $httpStatus = null): void
     {
         $metrics = $this->load();
         $entry = $metrics[$id] ?? $this->defaultEntry($id);
@@ -34,12 +34,15 @@ class FeedMetricsRepository
         $entry['success_count'] = (int) ($entry['success_count'] ?? 0) + 1;
         $entry['last_success'] = $this->now();
         $entry['consecutive_failures'] = 0;
+        if ($httpStatus !== null) {
+            $entry['last_http_status'] = $httpStatus;
+        }
 
         $metrics[$id] = $entry;
         $this->persist($metrics);
     }
 
-    public function recordFailure(string $id, string $reason = ''): void
+    public function recordFailure(string $id, string $reason = '', ?int $httpStatus = null): void
     {
         $metrics = $this->load();
         $entry = $metrics[$id] ?? $this->defaultEntry($id);
@@ -49,6 +52,9 @@ class FeedMetricsRepository
         $entry['consecutive_failures'] = (int) ($entry['consecutive_failures'] ?? 0) + 1;
         if ($reason !== '') {
             $entry['last_error'] = $reason;
+        }
+        if ($httpStatus !== null) {
+            $entry['last_http_status'] = $httpStatus;
         }
 
         $metrics[$id] = $entry;
@@ -116,7 +122,8 @@ class FeedMetricsRepository
             'last_success' => null,
             'last_failure' => null,
             'consecutive_failures' => 0,
-            'last_error' => null
+            'last_error' => null,
+            'last_http_status' => null
         ];
     }
 
@@ -125,4 +132,3 @@ class FeedMetricsRepository
         return (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format(DATE_ATOM);
     }
 }
-

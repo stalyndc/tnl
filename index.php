@@ -231,6 +231,21 @@ $initialLimit = $itemsPerPage;
                 <!-- Articles list -->
                 <ul class="articles-list">
                     <?php foreach ($feedData['items'] as $item): ?>
+                        <?php
+                            $sources = $item['sources'] ?? [];
+                            if (empty($sources) && !empty($item['source'])) {
+                                $sources = [[
+                                    'id' => $item['sourceId'] ?? ($item['source'] ?? ''),
+                                    'name' => $item['source']
+                                ]];
+                            }
+                            $sourceNames = array_values(array_filter(array_map(static function ($source) {
+                                return isset($source['name']) ? (string) $source['name'] : null;
+                            }, $sources)));
+                            $sanitizedSources = array_map(static function ($name) {
+                                return htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                            }, $sourceNames);
+                        ?>
                         <li class="article-card" itemscope itemtype="https://schema.org/NewsArticle">
                             <meta itemprop="datePublished" content="<?php echo date('c', $item['timestamp']); ?>">
                             <a href="<?php echo htmlspecialchars($item['link']); ?>" target="_blank" rel="noopener" itemprop="url">
@@ -242,14 +257,17 @@ $initialLimit = $itemsPerPage;
                                                 <?php echo formatTimestamp($item['timestamp']); ?>
                                             </span>
                                         <?php endif; ?>
-                                        <?php if (!empty($item['source'])): ?>
+                                        <?php if (!empty($sourceNames)): ?>
                                             <?php if (isset($item['timestamp'])): ?>
                                                 <span class="article-dot" aria-hidden="true">&middot;</span>
                                             <?php endif; ?>
                                             <span class="article-source" itemprop="publisher" itemscope itemtype="https://schema.org/Organization">
-                                                <meta itemprop="name" content="<?php echo htmlspecialchars($item['source']); ?>">
-                                                <?php echo htmlspecialchars($item['source']); ?>
+                                                <meta itemprop="name" content="<?php echo $sanitizedSources[0]; ?>">
+                                                <?php echo implode(' · ', array_slice($sanitizedSources, 0, 3)); ?>
                                             </span>
+                                            <?php if (count($sourceNames) > 3): ?>
+                                                <span class="article-source overflow">+<?php echo count($sourceNames) - 3; ?></span>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
                                 </div>

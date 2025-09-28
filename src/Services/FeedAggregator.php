@@ -117,7 +117,7 @@ class FeedAggregator
 
                 if ($httpCode >= 400 || $httpCode === 0) {
                     $reason = sprintf('HTTP %d', $httpCode);
-                    $this->metricsRepository->recordFailure($id, $reason);
+                    $this->metricsRepository->recordFailure($id, $reason, $httpCode);
                     \Logger::warning('Non-success HTTP status received from feed source', [
                         'source' => $source['name'] ?? $id,
                         'url' => $source['url'] ?? null,
@@ -127,7 +127,7 @@ class FeedAggregator
                 }
 
                 if ($content === false || $content === '') {
-                    $this->metricsRepository->recordFailure($id, 'Empty response');
+                    $this->metricsRepository->recordFailure($id, 'Empty response', $httpCode);
                     \Logger::warning('Empty content from source', [
                         'source' => $source['name'] ?? $id,
                         'url' => $source['url'] ?? null
@@ -139,9 +139,9 @@ class FeedAggregator
                 if (!empty($parsed['items'])) {
                     $sourceData[$id] = $parsed;
                     $this->cacheRepository->writeSource($id, $parsed);
-                    $this->metricsRepository->recordSuccess($id);
+                    $this->metricsRepository->recordSuccess($id, $httpCode);
                 } else {
-                    $this->metricsRepository->recordFailure($id, 'Parsed feed returned no items');
+                    $this->metricsRepository->recordFailure($id, 'Parsed feed returned no items', $httpCode);
                 }
             }
         }
@@ -152,6 +152,8 @@ class FeedAggregator
                 $allItems = array_merge($allItems, $data['items']);
             }
         }
+
+        $allItems = $this->deduplicateItems($allItems);
 
         usort($allItems, function (array $a, array $b) {
             $timeA = $a['timestamp'] ?? 0;
@@ -286,7 +288,11 @@ class FeedAggregator
             'pubDate' => $pubDate,
             'timestamp' => $timestamp,
             'source' => $source['name'] ?? $id,
-            'sourceId' => $id
+            'sourceId' => $id,
+            'sources' => [[
+                'id' => $id,
+                'name' => $source['name'] ?? $id
+            ]]
         ];
     }
 
@@ -320,8 +326,89 @@ class FeedAggregator
             'pubDate' => $pubDate,
             'timestamp' => $timestamp,
             'source' => $source['name'] ?? $id,
-            'sourceId' => $id
+            'sourceId' => $id,
+            'sources' => [[
+                'id' => $id,
+                'name' => $source['name'] ?? $id
+            ]]
         ];
+    }
+
+    /**
+     * Merge duplicate articles originating from multiple feeds.
+     *
+     * @param array<int, array<string, mixed>> $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function deduplicateItems(array $items): array
+    {
+        $grouped = [];
+
+        foreach ($items as $item) {
+            $key = $this->buildDedupeKey($item);
+
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = $item;
+                continue;
+            }
+
+            $existing =& $grouped[$key];
+
+            $existing['sources'][] = [
+                'id' => $item['sourceId'] ?? $item['source'] ?? 'unknown',
+                'name' => $item['source'] ?? ($item['sourceId'] ?? 'unknown')
+            ];
+
+            if (($item['timestamp'] ?? 0) > ($existing['timestamp'] ?? 0)) {
+                $existing['timestamp'] = $item['timestamp'] ?? $existing['timestamp'];
+                $existing['link'] = $item['link'] ?? $existing['link'];
+                $existing['source'] = $item['source'] ?? $existing['source'];
+                $existing['sourceId'] = $item['sourceId'] ?? $existing['sourceId'];
+            }
+        }
+
+        return array_values(array_map(function (array $item) {
+            $item['sources'] = $this->uniqueSources($item['sources'] ?? []);
+            return $item;
+        }, $grouped));
+    }
+
+    /**
+     * @param array<int, array<string, string>> $sources
+     * @return array<int, array<string, string>>
+     */
+    private function uniqueSources(array $sources): array
+    {
+        $seen = [];
+        $unique = [];
+
+        foreach ($sources as $source) {
+            $id = $source['id'] ?? $source['name'] ?? uniqid('source_', true);
+            if (isset($seen[$id])) {
+                continue;
+            }
+
+            $seen[$id] = true;
+            $unique[] = $source;
+        }
+
+        return $unique;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     */
+    private function buildDedupeKey(array $item): string
+    {
+        $link = trim((string) ($item['link'] ?? ''));
+        if ($link !== '') {
+            return 'link:' . strtolower($link);
+        }
+
+        $title = strtolower(trim((string) ($item['title'] ?? '')));
+        $title = preg_replace('/[^a-z0-9]+/i', '-', $title ?? '');
+
+        return 'title:' . $title;
     }
 
     /**

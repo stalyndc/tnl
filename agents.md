@@ -52,10 +52,16 @@ The News Log is a PHP-based tech news aggregator. The application now routes all
   ```bash
   scripts/clear-cache.php
   ```
+- **Override configuration via environment**
+  ```bash
+  cp .env.example .env
+  # edit values, e.g.
+  APP_CACHE_TTL=900
+  ```
 
 ## Development Workflow
 1. Add or modify services/classes inside `src/` (see the simple container registrations in `functions.php`) and regenerate the autoloader if new files are created.
-2. Update configuration defaults in `config/app.php` or `config/feeds.php` as needed.
+2. Update configuration defaults in `config/app.php` or `config/feeds.php` as needed, or supply overrides in `.env`.
 3. Run linting and the PHPUnit suite (`vendor/bin/phpunit`) before committing.
 4. If deploying via git pull on Hostinger, ensure `composer install --no-dev` has been run locally so `vendor/` is committed.
 5. Optionally run `scripts/build-release.sh` to produce a zipped artifact (the CI workflow also generates one automatically).

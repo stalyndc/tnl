@@ -5,5 +5,9 @@ storage/logs/
 *.log
 *.cache
 
+# Environment files
+.env
+.env.local
+
 # Build artifacts
 dist/

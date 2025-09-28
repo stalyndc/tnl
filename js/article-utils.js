@@ -156,26 +156,40 @@ function createArticleElement(item) {
   
   const metaDiv = document.createElement('div');
   metaDiv.className = 'article-meta';
-  
-  const source = document.createElement('span');
-  source.className = 'article-source';
-  source.setAttribute('itemprop', 'publisher');
-  source.setAttribute('itemscope', '');
-  source.setAttribute('itemtype', 'https://schema.org/Organization');
-  
-  const sourceNameMeta = document.createElement('meta');
-  sourceNameMeta.setAttribute('itemprop', 'name');
-  sourceNameMeta.setAttribute('content', item.source);
-  source.appendChild(sourceNameMeta);
-  source.appendChild(document.createTextNode(item.source));
-  
-  const time = document.createElement('span');
-  time.className = 'article-time';
-  time.setAttribute('data-timestamp', item.timestamp);
-  time.textContent = formatRelativeTime(Math.floor(Date.now() / 1000) - item.timestamp);
-  
-  metaDiv.appendChild(source);
-  metaDiv.appendChild(time);
+
+  let hasTimestamp = false;
+  if (typeof item.timestamp === 'number') {
+    const time = document.createElement('span');
+    time.className = 'article-time';
+    time.setAttribute('data-timestamp', item.timestamp);
+    time.textContent = formatRelativeTime(Math.floor(Date.now() / 1000) - item.timestamp);
+    metaDiv.appendChild(time);
+    hasTimestamp = true;
+  }
+
+  if (item.source) {
+    if (hasTimestamp) {
+      const dot = document.createElement('span');
+      dot.className = 'article-dot';
+      dot.setAttribute('aria-hidden', 'true');
+      dot.textContent = '·';
+      metaDiv.appendChild(dot);
+    }
+
+    const source = document.createElement('span');
+    source.className = 'article-source';
+    source.setAttribute('itemprop', 'publisher');
+    source.setAttribute('itemscope', '');
+    source.setAttribute('itemtype', 'https://schema.org/Organization');
+
+    const sourceNameMeta = document.createElement('meta');
+    sourceNameMeta.setAttribute('itemprop', 'name');
+    sourceNameMeta.setAttribute('content', item.source);
+    source.appendChild(sourceNameMeta);
+    source.appendChild(document.createTextNode(item.source));
+
+    metaDiv.appendChild(source);
+  }
   
   content.appendChild(title);
   content.appendChild(metaDiv);

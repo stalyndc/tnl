@@ -237,13 +237,18 @@ $initialLimit = $itemsPerPage;
                                 <div class="article-content">
                                     <h2 class="article-title" itemprop="headline"><?php echo htmlspecialchars($item['title']); ?></h2>
                                     <div class="article-meta">
-                                        <span class="article-source" itemprop="publisher" itemscope itemtype="https://schema.org/Organization">
-                                            <meta itemprop="name" content="<?php echo htmlspecialchars($item['source']); ?>">
-                                            <?php echo htmlspecialchars($item['source']); ?>
-                                        </span>
                                         <?php if (isset($item['timestamp'])): ?>
                                             <span class="article-time" data-timestamp="<?php echo $item['timestamp']; ?>">
                                                 <?php echo formatTimestamp($item['timestamp']); ?>
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($item['source'])): ?>
+                                            <?php if (isset($item['timestamp'])): ?>
+                                                <span class="article-dot" aria-hidden="true">&middot;</span>
+                                            <?php endif; ?>
+                                            <span class="article-source" itemprop="publisher" itemscope itemtype="https://schema.org/Organization">
+                                                <meta itemprop="name" content="<?php echo htmlspecialchars($item['source']); ?>">
+                                                <?php echo htmlspecialchars($item['source']); ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>

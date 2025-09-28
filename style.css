@@ -329,14 +329,17 @@ main {
 /* Articles Styling */
 .articles-list {
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
 }
 
 .pagination-nav {
-  margin: 1.5rem 0;
-  padding: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  margin: 1.75rem 0 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.6);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -355,23 +358,24 @@ main {
 }
 
 .pagination-link {
-  padding: 0.5rem 0.9rem;
+  padding: 0.45rem 0.95rem;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  background: rgba(80, 80, 80, 0.1);
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .pagination-link:hover {
-  background: var(--accent-red);
-  border-color: transparent;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .article-card {
-  background-color: var(--card-bg);
-  border-left: 3px solid transparent;
-  margin-bottom: 0.75rem;
-  transition: all var(--transition-fast);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
   opacity: 0;
   animation: fadeIn var(--transition-medium) forwards;
 }
@@ -389,52 +393,60 @@ main {
 .article-card:nth-child(10) { animation-delay: 0.5s; }
 
 .article-card:hover {
-  background-color: var(--card-hover);
-  border-left: 3px solid var(--accent-red);
-  transform: translateX(3px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
 }
 
 /* Border highlight for newly loaded articles */
 .article-card.highlight {
-  border: 1px solid transparent;
-  animation: borderHighlight 0.8s ease forwards;
+  border-color: rgba(232, 49, 81, 0.4);
 }
 
 .article-content {
-  padding: 1rem 1.2rem;
+  padding: 1.25rem 1.4rem 1.3rem;
 }
 
 .article-title {
-  font-size: 1.25rem; /* Increased from 1.1rem */
-  font-weight: 600; /* Increased from 500 */
-  margin-bottom: 0.5rem;
-  line-height: 1.4; /* Increased from 1.3 for better readability */
+  font-size: 1.12rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.45;
   letter-spacing: 0.01em;
 }
 
 .article-meta {
-  font-size: 0.85rem;
+  margin-top: 0.55rem;
+  font-size: 0.82rem;
   color: var(--muted-text);
   display: flex;
-  justify-content: space-between;
-}
-
-.article-source {
-  font-weight: 500;
-  color: var(--accent-red);
-  transition: all var(--transition-fast);
-}
-
-/* Source badge animation */
-.article-card:hover .article-source {
-  transform: scale(1.05);
-  opacity: 1;
-  color: var(--accent-red-hover);
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .article-time {
   font-family: "IBM Plex Mono", monospace;
-  font-weight: 300; /* Lighter weight for timestamp */
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.article-dot {
+  opacity: 0.45;
+}
+
+.article-source {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  transition: color var(--transition-fast);
+}
+
+.article-card:hover .article-source {
+  color: rgba(255, 255, 255, 1);
+}
+
+.article-time {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 400;
 }
 
 /* Load More Button */

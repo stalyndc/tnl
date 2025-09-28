@@ -31,7 +31,7 @@ function appContainer(): Container
 function registerDefaultServices(Container $container): void
 {
     $container->set(FeedRepository::class, function (Container $c) {
-        return new FeedRepository(__DIR__ . '/config/feeds.php');
+        return new FeedRepository(__DIR__ . '/config/feeds.json');
     });
 
     $container->set(CacheRepository::class, function (Container $c) {

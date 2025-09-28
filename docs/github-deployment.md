@@ -12,6 +12,7 @@ The site code is pushed to GitHub and then pulled into Hostinger via Git. Becaus
 - After pushing from local, trigger the pull from Hostinger's control panel or via git CLI.
 - Verify file permissions on `storage/cache` and `storage/logs` after each pull.
 - Clear cached feed files if necessary (`storage/cache/*.json`).
+- Manage feeds without editing JSON manually by running the CLI: `php scripts/feed-admin.php list`. Set `FEED_ADMIN_TOKEN` on the server and include `--token=<value>` when executing commands.
 
 ## Continuous Deployment Considerations
 - GitHub Actions workflow (`.github/workflows/build.yml`) runs Composer, executes PHPUnit, builds `dist/the-news-log.zip`, and uploads it as a build artifact. Download this artifact when you can't run the release script locally.

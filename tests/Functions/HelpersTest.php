@@ -51,16 +51,15 @@ class HelpersTest extends TestCase
             $this->fail('Failed to create temporary cache directory');
         }
 
-        $this->configPath = $this->cacheDir . '/feeds.php';
-        file_put_contents($this->configPath, <<<PHP
-<?php
-return [
-    'test-feed' => [
-        'name' => 'Test Feed',
-        'url' => 'https://example.com/feed'
-    ]
-];
-PHP);
+        $this->configPath = $this->cacheDir . '/feeds.json';
+        file_put_contents($this->configPath, json_encode([
+            [
+                'id' => 'test-feed',
+                'name' => 'Test Feed',
+                'url' => 'https://example.com/feed',
+                'enabled' => true
+            ]
+        ]));
 
         $rss = <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
